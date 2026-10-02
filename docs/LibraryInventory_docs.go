@@ -7,6 +7,135 @@ import "github.com/swaggo/swag/v2"
 const docTemplateLibraryInventory = `{
     "schemes": {{ marshal .Schemes }},
     "components": {
+        "schemas": {
+            "pkg_rest.ErrorResponse": {
+                "properties": {
+                    "message": {
+                        "example": "error description",
+                        "type": "string"
+                    },
+                    "status": {
+                        "example": "error",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "pkg_rest.InventoryRequest": {
+                "properties": {
+                    "afi": {
+                        "form": "afi",
+                        "type": "string"
+                    },
+                    "country": {
+                        "form": "country",
+                        "type": "string"
+                    },
+                    "isCrcValid": {
+                        "form": "isCrcValid",
+                        "type": "boolean"
+                    },
+                    "isil": {
+                        "form": "isil",
+                        "type": "string"
+                    },
+                    "itemId": {
+                        "form": "itemId",
+                        "type": "string"
+                    },
+                    "itemid": {
+                        "form": "itemid",
+                        "type": "string"
+                    },
+                    "jwt": {
+                        "form": "jwt",
+                        "type": "string"
+                    },
+                    "marker": {
+                        "form": "marker",
+                        "type": "string"
+                    },
+                    "partNo": {
+                        "form": "partNo",
+                        "type": "integer"
+                    },
+                    "partno": {
+                        "form": "partno",
+                        "type": "integer"
+                    },
+                    "parts": {
+                        "form": "parts",
+                        "type": "integer"
+                    },
+                    "raw": {
+                        "form": "raw",
+                        "type": "string"
+                    },
+                    "session": {
+                        "form": "session",
+                        "type": "string"
+                    },
+                    "sessionname": {
+                        "form": "sessionname",
+                        "type": "string"
+                    },
+                    "text": {
+                        "form": "text",
+                        "type": "string"
+                    },
+                    "timestamp": {
+                        "form": "timestamp",
+                        "type": "integer"
+                    },
+                    "ts": {
+                        "form": "ts",
+                        "type": "integer"
+                    },
+                    "uid": {
+                        "form": "uid",
+                        "type": "string"
+                    },
+                    "usageType": {
+                        "form": "usageType",
+                        "type": "integer"
+                    },
+                    "usagetype": {
+                        "form": "usagetype",
+                        "type": "integer"
+                    },
+                    "version": {
+                        "form": "version",
+                        "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
+            "pkg_rest.InventoryResponse": {
+                "properties": {
+                    "inventoryid": {
+                        "example": 1,
+                        "type": "integer"
+                    },
+                    "itemid": {
+                        "example": "30111234",
+                        "type": "string"
+                    },
+                    "message": {
+                        "example": "inventory record created",
+                        "type": "string"
+                    },
+                    "status": {
+                        "example": "ok",
+                        "type": "string"
+                    },
+                    "uid": {
+                        "example": "E00401501234ABCD",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            }
+        },
         "securitySchemes": {
             "BearerAuth": {
                 "in": "header",
@@ -35,6 +164,244 @@ const docTemplateLibraryInventory = `{
         "url": ""
     },
     "paths": {
+        "/inventory": {
+            "get": {
+                "description": "Inserts NFC scan data into the inventory table via query parameters",
+                "operationId": "get-inventory",
+                "parameters": [
+                    {
+                        "description": "NFC Tag UID (16 chars)",
+                        "in": "query",
+                        "name": "uid",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Item ID / Barcode (16 chars)",
+                        "in": "query",
+                        "name": "itemid",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Country code (2 chars, e.g. CH)",
+                        "in": "query",
+                        "name": "country",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "ISIL library code (11 chars)",
+                        "in": "query",
+                        "name": "isil",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Data model version",
+                        "in": "query",
+                        "name": "version",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Usage type",
+                        "in": "query",
+                        "name": "usagetype",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Total parts",
+                        "in": "query",
+                        "name": "parts",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Part number",
+                        "in": "query",
+                        "name": "partno",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Timestamp in milliseconds or seconds",
+                        "in": "query",
+                        "name": "ts",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "User text / location / session name",
+                        "in": "query",
+                        "name": "text",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Session name (32 chars)",
+                        "in": "query",
+                        "name": "sessionname",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Marker (255 chars)",
+                        "in": "query",
+                        "name": "marker",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "AFI byte hex",
+                        "in": "query",
+                        "name": "afi",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Raw payload in hex or string format",
+                        "in": "query",
+                        "name": "raw",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "JWT token for authentication",
+                        "in": "query",
+                        "name": "jwt",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/pkg_rest.InventoryResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/pkg_rest.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/pkg_rest.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/pkg_rest.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "Add inventory item via GET",
+                "tags": [
+                    "libraryinventory"
+                ]
+            },
+            "post": {
+                "description": "Inserts NFC scan data into the inventory table via JSON body or form/query parameters",
+                "operationId": "post-inventory",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/pkg_rest.InventoryRequest",
+                                "summary": "body",
+                                "description": "Inventory scan payload"
+                            }
+                        }
+                    },
+                    "description": "Inventory scan payload",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/pkg_rest.InventoryResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/pkg_rest.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/pkg_rest.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/pkg_rest.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    }
+                },
+                "summary": "Add inventory item via POST",
+                "tags": [
+                    "libraryinventory"
+                ]
+            }
+        },
         "/ping": {
             "get": {
                 "description": "for testing if server is running",

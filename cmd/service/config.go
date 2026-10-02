@@ -17,6 +17,7 @@ type LibraryInventoryConfig struct {
 	LogFile      string           `toml:"logfile"`
 	MySQLDSN     config.EnvString `toml:"mysqldsn"`
 	RESTTLS      *loader.Config   `toml:"resttls"`
+	JWTKey       config.EnvString `toml:"jwtkey"`
 }
 
 func LoadLibraryInventoryConfig(fSys fs.FS, fp string, conf *LibraryInventoryConfig) error {

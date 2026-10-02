@@ -3,6 +3,7 @@ package rest
 import (
 	"context"
 	"crypto/tls"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -39,10 +40,12 @@ type Controller struct {
 	addr    string
 	extAddr string
 	subpath string
+	db      *sql.DB
 	logger  *zerolog.Logger
+	jwtKey  string
 }
 
-func NewController(addr, extAddr string, tlsConfig *tls.Config, logger *zerolog.Logger) (*Controller, error) {
+func NewController(addr, extAddr string, tlsConfig *tls.Config, db *sql.DB, jwtKey string, logger *zerolog.Logger) (*Controller, error) {
 	u, err := url.Parse(extAddr)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid external address '%s'", extAddr)
@@ -72,6 +75,8 @@ func NewController(addr, extAddr string, tlsConfig *tls.Config, logger *zerolog.
 		extAddr: extAddr,
 		subpath: subpath,
 		router:  router,
+		db:      db,
+		jwtKey:  jwtKey,
 		logger:  &subLogger,
 	}
 
@@ -88,6 +93,10 @@ func (ctrl *Controller) Init(tlsConfig *tls.Config) error {
 
 	// Route registrations
 	ctrl.router.GET("/ping", ctrl.ping)
+	ctrl.router.GET("/inventory", ctrl.inventoryGet)
+	ctrl.router.POST("/inventory", ctrl.inventoryPost)
+	ctrl.router.GET("/api/inventory", ctrl.inventoryGet)
+	ctrl.router.POST("/api/inventory", ctrl.inventoryPost)
 
 	ctrl.router.GET("/swagger/*any", swaggerui.CustomHandler(
 		swaggerui.WithTitle("Library Inventory API"),
