@@ -1,0 +1,4 @@
+localaddr = ":8080"
+externaladdr = "http://localhost:8080"
+loglevel = "DEBUG"
+logfile = ""
