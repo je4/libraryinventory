@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"os/signal"
@@ -14,6 +16,7 @@ import (
 	"github.com/je4/libraryinventory/pkg/rest"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"go.ub.unibas.ch/cloud/certloader/v2/pkg/loader"
 )
 
 var configfile = flag.String("config", "", "location of toml configuration file")
@@ -47,10 +50,20 @@ func main() {
 	zerolog.SetGlobalLevel(level)
 	logger := log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
+	var restTLSConfig *tls.Config
+	if conf.RESTTLS != nil {
+		var restLoader io.Closer
+		restTLSConfig, restLoader, err = loader.CreateServerLoader(false, conf.RESTTLS, nil, &logger)
+		if err != nil {
+			logger.Fatal().Err(err).Msg("cannot create server loader")
+		}
+		defer restLoader.Close()
+	}
+
 	ctrl, err := rest.NewController(
 		conf.LocalAddr,
 		conf.ExternalAddr,
-		nil,
+		restTLSConfig,
 		&logger,
 	)
 	if err != nil {

@@ -13,8 +13,8 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/je4/libraryinventory/pkg/rest/docs"
-	"github.com/je4/libraryinventory/pkg/swaggerui"
 	"github.com/rs/zerolog"
+	"go.ub.unibas.ch/cloud/swaggerui"
 )
 
 //	@title			Library Inventory API

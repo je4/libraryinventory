@@ -2,34 +2,35 @@ package main
 
 import (
 	"io/fs"
-	"os"
 
 	"emperror.dev/errors"
 	"github.com/BurntSushi/toml"
+	localconfig "github.com/je4/libraryinventory/config"
+	"github.com/je4/utils/v2/pkg/config"
+	"go.ub.unibas.ch/cloud/certloader/v2/pkg/loader"
 )
 
 type LibraryInventoryConfig struct {
-	LocalAddr    string `toml:"localaddr"`
-	ExternalAddr string `toml:"externaladdr"`
-	LogLevel     string `toml:"loglevel"`
-	LogFile      string `toml:"logfile"`
+	LocalAddr    string           `toml:"localaddr"`
+	ExternalAddr string           `toml:"externaladdr"`
+	LogLevel     string           `toml:"loglevel"`
+	LogFile      string           `toml:"logfile"`
+	MySQLDSN     config.EnvString `toml:"mysqldsn"`
+	RESTTLS      *loader.Config   `toml:"resttls"`
 }
 
 func LoadLibraryInventoryConfig(fSys fs.FS, fp string, conf *LibraryInventoryConfig) error {
-	if _, err := fs.Stat(fSys, fp); err != nil {
-		path, err := os.Getwd()
-		if err != nil {
-			return errors.Wrap(err, "cannot get current working directory")
-		}
-		fSys = os.DirFS(path)
-		fp = "libraryinventory.toml"
+	if _, err := toml.Decode(localconfig.DefaultConfig, conf); err != nil {
+		return errors.Wrap(err, "error decoding default config")
+	}
+	if fp == "" {
+		return nil
 	}
 	data, err := fs.ReadFile(fSys, fp)
 	if err != nil {
 		return errors.Wrapf(err, "cannot read file [%v] %s", fSys, fp)
 	}
-	_, err = toml.Decode(string(data), conf)
-	if err != nil {
+	if _, err := toml.Decode(string(data), conf); err != nil {
 		return errors.Wrapf(err, "error loading config file %v", fp)
 	}
 	return nil

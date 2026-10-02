@@ -1,4 +1,8 @@
-localaddr = ":8080"
-externaladdr = "http://localhost:8080"
+localaddr = ":8443"
+externaladdr = "https://localhost:8443"
 loglevel = "DEBUG"
 logfile = ""
+mysqldsn = "%%DB%%"
+
+[resttls]
+type = "DEV"
