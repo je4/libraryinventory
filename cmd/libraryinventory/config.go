@@ -34,5 +34,8 @@ func LoadLibraryInventoryConfig(fSys fs.FS, fp string, conf *LibraryInventoryCon
 	if _, err := toml.Decode(string(data), conf); err != nil {
 		return errors.Wrapf(err, "error loading config file %v", fp)
 	}
+	if conf.RESTTLS != nil && conf.RESTTLS.Type == "" {
+		conf.RESTTLS = nil
+	}
 	return nil
 }
