@@ -393,6 +393,16 @@ func TestController_Inventory_RequiredFieldsAndEmptyNonEssential(t *testing.T) {
 		if resp.ItemID != "30118888" || resp.UID != "E00401508888ABCD" {
 			t.Errorf("unexpected response: %+v", resp)
 		}
+
+		// Ensure marker is NULL when not supplied, even if afi or text are provided
+		globalTestDriver.mu.Lock()
+		defer globalTestDriver.mu.Unlock()
+		if len(globalTestDriver.lastExec.args) >= 10 {
+			nullStr, ok := globalTestDriver.lastExec.args[9].Value.(sql.NullString)
+			if ok && nullStr.Valid {
+				t.Errorf("expected marker to be NULL/invalid when empty, got '%s'", nullStr.String)
+			}
+		}
 	}
 }
 
@@ -465,5 +475,57 @@ func TestController_Inventory_MissingUID(t *testing.T) {
 	ctrl.router.ServeHTTP(w, req)
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected 400 for missing uid, got %d", w.Code)
+	}
+}
+
+func TestController_Inventory_MarkerOnlyFromMarkerField(t *testing.T) {
+	logger := zerolog.Nop()
+	db, err := sql.Open("test_mock", "")
+	if err != nil {
+		t.Fatalf("failed to open mock db: %v", err)
+	}
+	defer db.Close()
+
+	ctrl, err := NewController(":0", "http://localhost:8080", nil, db, "", &logger)
+	if err != nil {
+		t.Fatalf("failed to create controller: %v", err)
+	}
+
+	// 1. GET with afi and text but NO marker: marker column must be empty/nil, not afi or text
+	{
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/inventory?uid=E00401501234ABCD&itemid=30111234&afi=C7&text=SampleText", nil)
+		ctrl.router.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+		}
+
+		globalTestDriver.mu.Lock()
+		markerArg := globalTestDriver.lastExec.args[9].Value
+		globalTestDriver.mu.Unlock()
+
+		markerStr := getArgString(markerArg)
+		if markerStr != "" {
+			t.Errorf("expected marker to be empty when marker param is omitted, but got: '%s'", markerStr)
+		}
+	}
+
+	// 2. GET with explicit marker and afi: marker column must contain marker value
+	{
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/inventory?uid=E00401501234ABCD&itemid=30111234&marker=Shelf_42&afi=C7", nil)
+		ctrl.router.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+		}
+
+		globalTestDriver.mu.Lock()
+		markerArg := globalTestDriver.lastExec.args[9].Value
+		globalTestDriver.mu.Unlock()
+
+		markerStr := getArgString(markerArg)
+		if markerStr != "Shelf_42" {
+			t.Errorf("expected marker 'Shelf_42', got: '%s'", markerStr)
+		}
 	}
 }

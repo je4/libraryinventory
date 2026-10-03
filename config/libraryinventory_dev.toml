@@ -1,0 +1,9 @@
+localaddr = ":8443"
+externaladdr = "https://localhost:8443"
+loglevel = "DEBUG"
+logfile = ""
+mysqldsn = "%%DB%%"
+jwtkey = "%%JWTKEY%%"
+
+[resttls]
+type = "DEV"

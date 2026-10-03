@@ -1,9 +1,6 @@
-localaddr = ":8443"
-externaladdr = "https://localhost:8443"
-loglevel = "DEBUG"
+localaddr = ":8080"
+externaladdr = "http://localhost:8080"
+loglevel = "ERROR"
 logfile = ""
 mysqldsn = "%%DB%%"
 jwtkey = "%%JWTKEY%%"
-
-[resttls]
-type = "DEV"

@@ -15,46 +15,75 @@ import (
 )
 
 // InventoryRequest represents the incoming payload from GET query params or POST JSON body.
+// It supports both camelCase and lowercase parameter variants for compatibility with different RFID scanner clients.
 type InventoryRequest struct {
-	UID          string `json:"uid" form:"uid"`
-	Version      int    `json:"version" form:"version"`
-	UsageType    int    `json:"usageType" form:"usageType"`
-	UsageTypeAlt int    `json:"usagetype" form:"usagetype"`
-	Parts        int    `json:"parts" form:"parts"`
-	PartNo       int    `json:"partNo" form:"partNo"`
-	PartNoAlt    int    `json:"partno" form:"partno"`
-	ItemID       string `json:"itemId" form:"itemId"`
-	ItemIDAlt    string `json:"itemid" form:"itemid"`
-	Country      string `json:"country" form:"country"`
-	ISIL         string `json:"isil" form:"isil"`
-	Timestamp    int64  `json:"timestamp" form:"timestamp"`
-	TS           int64  `json:"ts" form:"ts"`
-	Text         string `json:"text" form:"text"`
-	Marker       string `json:"marker" form:"marker"`
-	SessionName  string `json:"sessionname" form:"sessionname"`
-	Session      string `json:"session" form:"session"`
-	AFI          string `json:"afi" form:"afi"`
-	Raw          string `json:"raw" form:"raw"`
-	JWT          string `json:"jwt" form:"jwt"`
-	IsCrcValid   *bool  `json:"isCrcValid,omitempty" form:"isCrcValid"`
+	// UID is the unique NFC/RFID tag identifier (e.g. 16 hex characters).
+	UID string `json:"uid" form:"uid"`
+	// Version is the RFID data model version number.
+	Version int `json:"version" form:"version"`
+	// UsageType specifies the library item usage category (e.g., circular, reference).
+	UsageType int `json:"usageType" form:"usageType"`
+	// UsageTypeAlt is an alias for UsageType ("usagetype").
+	UsageTypeAlt int `json:"usagetype" form:"usagetype"`
+	// Parts is the total number of parts for multi-volume items.
+	Parts int `json:"parts" form:"parts"`
+	// PartNo is the specific part number of this item.
+	PartNo int `json:"partNo" form:"partNo"`
+	// PartNoAlt is an alias for PartNo ("partno").
+	PartNoAlt int `json:"partno" form:"partno"`
+	// ItemID is the unique item barcode or accession identifier.
+	ItemID string `json:"itemId" form:"itemId"`
+	// ItemIDAlt is an alias for ItemID ("itemid").
+	ItemIDAlt string `json:"itemid" form:"itemid"`
+	// Country is the ISO 3166-1 alpha-2 country code (e.g., "CH").
+	Country string `json:"country" form:"country"`
+	// ISIL is the International Standard Identifier for Libraries (e.g., "CH-000008-7").
+	ISIL string `json:"isil" form:"isil"`
+	// Timestamp represents the scan time in milliseconds or seconds epoch.
+	Timestamp int64 `json:"timestamp" form:"timestamp"`
+	// TS is an alias for Timestamp ("ts").
+	TS int64 `json:"ts" form:"ts"`
+	// Text is a free-text field or location description, used as fallback for session name.
+	Text string `json:"text" form:"text"`
+	// Marker represents an optional shelf, rack, or tracking marker.
+	Marker string `json:"marker" form:"marker"`
+	// SessionName specifies the inventory session identifier.
+	SessionName string `json:"sessionname" form:"sessionname"`
+	// Session is an alias for SessionName ("session").
+	Session string `json:"session" form:"session"`
+	// AFI is the Application Family Identifier byte hex string.
+	AFI string `json:"afi" form:"afi"`
+	// Raw contains raw tag block bytes as hex or plain text.
+	Raw string `json:"raw" form:"raw"`
+	// JWT is an optional JWT token passed directly in request parameters.
+	JWT string `json:"jwt" form:"jwt"`
+	// IsCrcValid indicates whether tag CRC check succeeded.
+	IsCrcValid *bool `json:"isCrcValid,omitempty" form:"isCrcValid"`
 }
 
-// InventoryResponse represents the standard success response.
+// InventoryResponse represents the standard JSON response returned upon successful record creation.
 type InventoryResponse struct {
-	Status      string `json:"status" example:"ok"`
-	Message     string `json:"message" example:"inventory record created"`
-	InventoryID int64  `json:"inventoryid,omitempty" example:"1"`
-	UID         string `json:"uid" example:"E00401501234ABCD"`
-	ItemID      string `json:"itemid,omitempty" example:"30111234"`
+	// Status indicates success ("ok").
+	Status string `json:"status" example:"ok"`
+	// Message provides a human-readable confirmation message.
+	Message string `json:"message" example:"inventory record created"`
+	// InventoryID is the auto-increment database primary key of the inserted record.
+	InventoryID int64 `json:"inventoryid,omitempty" example:"1"`
+	// UID is the NFC tag UID associated with the record.
+	UID string `json:"uid" example:"E00401501234ABCD"`
+	// ItemID is the barcode/item identifier associated with the record.
+	ItemID string `json:"itemid,omitempty" example:"30111234"`
 }
 
-// ErrorResponse represents an error response.
+// ErrorResponse represents an error response payload with status and descriptive message.
 type ErrorResponse struct {
-	Status  string `json:"status" example:"error"`
+	// Status indicates failure ("error").
+	Status string `json:"status" example:"error"`
+	// Message contains the error description.
 	Message string `json:"message" example:"error description"`
 }
 
-// InventoryRecord represents a normalized row to be inserted into the `inventory` table.
+// InventoryRecord represents a normalized row ready for database insertion into the MySQL `inventory` table.
 type InventoryRecord struct {
 	UID           string
 	Version       int
@@ -70,6 +99,7 @@ type InventoryRecord struct {
 	Raw           []byte
 }
 
+// verifyHS256Token validates that a JWT string is signed using HMAC (HS256, HS384, or HS512) with the provided secret.
 func verifyHS256Token(tokenString, secret string) error {
 	tokenString = strings.TrimSpace(tokenString)
 	if tokenString == "" {
@@ -97,6 +127,13 @@ func verifyHS256Token(tokenString, secret string) error {
 	return nil
 }
 
+// checkAuth enforces JWT authentication if a jwtKey is configured on the controller.
+// It searches for the JWT token in:
+//  1. "Authorization: Bearer <token>" HTTP header
+//  2. "jwt" URL query parameter
+//  3. "jwt" field in the request payload
+//
+// Returns true if authenticated or if authentication is disabled, false otherwise.
 func (ctrl *Controller) checkAuth(c *gin.Context, reqToken string) bool {
 	if ctrl.jwtKey == "" {
 		return true
@@ -139,6 +176,9 @@ func (ctrl *Controller) checkAuth(c *gin.Context, reqToken string) bool {
 	return true
 }
 
+// processInventoryRequest normalizes and validates incoming inventory scan requests.
+// It applies field trimming, length limits matching the MySQL database schema, timestamp parsing,
+// and raw payload hex-decoding.
 func (ctrl *Controller) processInventoryRequest(req *InventoryRequest) (*InventoryRecord, error) {
 	uid := strings.TrimSpace(req.UID)
 	if uid == "" {
@@ -192,7 +232,7 @@ func (ctrl *Controller) processInventoryRequest(req *InventoryRequest) (*Invento
 		}
 	}
 
-	// Timestamp handling
+	// Timestamp handling: support millisecond epoch (>100000000000), second epoch, or fallback to now.
 	ts := req.Timestamp
 	if ts == 0 && req.TS != 0 {
 		ts = req.TS
@@ -207,7 +247,7 @@ func (ctrl *Controller) processInventoryRequest(req *InventoryRequest) (*Invento
 		invTime = time.Now()
 	}
 
-	// Session name & marker handling
+	// Session name & marker handling with length constraints.
 	sessionName := strings.TrimSpace(req.SessionName)
 	if sessionName == "" {
 		sessionName = strings.TrimSpace(req.Session)
@@ -226,18 +266,6 @@ func (ctrl *Controller) processInventoryRequest(req *InventoryRequest) (*Invento
 			markerStr = markerStr[:255]
 		}
 		marker = &markerStr
-	} else if req.AFI != "" {
-		afiStr := strings.TrimSpace(req.AFI)
-		if len(afiStr) > 255 {
-			afiStr = afiStr[:255]
-		}
-		marker = &afiStr
-	} else if req.Text != "" && sessionName != strings.TrimSpace(req.Text) {
-		textStr := strings.TrimSpace(req.Text)
-		if len(textStr) > 255 {
-			textStr = textStr[:255]
-		}
-		marker = &textStr
 	}
 
 	return &InventoryRecord{
@@ -256,6 +284,7 @@ func (ctrl *Controller) processInventoryRequest(req *InventoryRequest) (*Invento
 	}, nil
 }
 
+// insertInventory executes the SQL INSERT statement into the `inventory` table and returns the auto-generated ID.
 func (ctrl *Controller) insertInventory(c *gin.Context, record *InventoryRecord) (int64, error) {
 	if ctrl.db == nil {
 		return 0, errors.New("database connection not configured")

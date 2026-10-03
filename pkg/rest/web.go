@@ -1,3 +1,4 @@
+// Package rest provides HTTP handlers, router configuration, and middleware for the Library Inventory service.
 package rest
 
 import (
@@ -34,6 +35,7 @@ import (
 //	@in							header
 //	@name						Authorization
 
+// Controller manages HTTP routing, server lifecycle, database access, and authentication for REST endpoints.
 type Controller struct {
 	server  http.Server
 	router  *gin.Engine
@@ -45,6 +47,7 @@ type Controller struct {
 	jwtKey  string
 }
 
+// NewController instantiates and initializes a new REST Controller with Swagger metadata, logging, and router middleware.
 func NewController(addr, extAddr string, tlsConfig *tls.Config, db *sql.DB, jwtKey string, logger *zerolog.Logger) (*Controller, error) {
 	u, err := url.Parse(extAddr)
 	if err != nil {
@@ -87,6 +90,7 @@ func NewController(addr, extAddr string, tlsConfig *tls.Config, db *sql.DB, jwtK
 	return c, nil
 }
 
+// Init configures middleware (CORS), registers API endpoints, mounts Swagger UI, and prepares the underlying http.Server.
 func (ctrl *Controller) Init(tlsConfig *tls.Config) error {
 	// CORS Middleware Configuration
 	ctrl.router.Use(cors.Default())
@@ -129,6 +133,7 @@ func (ctrl *Controller) ping(c *gin.Context) {
 	})
 }
 
+// Start launches the HTTP or HTTPS server asynchronously and tracks its completion with the provided WaitGroup.
 func (ctrl *Controller) Start(wg *sync.WaitGroup) {
 	go func() {
 		wg.Add(1)
@@ -148,10 +153,12 @@ func (ctrl *Controller) Start(wg *sync.WaitGroup) {
 	}()
 }
 
+// Stop shuts down the HTTP server immediately.
 func (ctrl *Controller) Stop() {
 	_ = ctrl.server.Shutdown(context.Background())
 }
 
+// GracefulStop gracefully drains existing connections and shuts down the HTTP server.
 func (ctrl *Controller) GracefulStop() error {
 	return errors.WithStack(ctrl.server.Shutdown(context.Background()))
 }
